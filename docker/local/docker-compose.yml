@@ -14,7 +14,7 @@ services:
         depends_on:
             - db
         volumes:
-            - .:/src
+            - ../../:/app
         ports:
             - "4000:4000"
         networks:
