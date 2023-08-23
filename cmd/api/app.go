@@ -11,6 +11,12 @@ import "log"
 type config struct {
 	port int
 	env  string
+	db   struct {
+		dsn         string
+		maxOpenCons int
+		maxIdleCons int
+		maxIdleTime string
+	}
 }
 
 type application struct {

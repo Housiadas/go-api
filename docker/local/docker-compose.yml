@@ -11,6 +11,8 @@ services:
             target: dev
             dockerfile: docker/local/Dockerfile
         restart: unless-stopped
+        env_file:
+            - .env
         depends_on:
             - db
         volumes:
@@ -18,25 +20,25 @@ services:
         ports:
             - "4000:4000"
         networks:
-            - go_api_local
+            - go_api_local_network
 
     db:
-        image: 'mysql:8.0'
-        container_name: go-api-mysql-container
+        image: postgres:13
+        container_name: go-api-db-container
+        restart: always
         environment:
-            MYSQL_DATABASE: "${MYSQL_DATABASE}"
-            MYSQL_USER: "${MYSQL_USER}"
-            MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
-            MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
-        volumes:
-            -   go_api_mysql_data:/var/lib/mysql
+            POSTGRES_DB: "${DB_DATABASE}"
+            POSTGRES_USER: "${DB_USER}"
+            POSTGRES_PASSWORD: "${DB_PASSWORD}"
         ports:
-            -   "${MYSQL_PORT}:3306"
+            - '${DB_PORT}:5432'
+        volumes:
+            - go_api_db_data:/var/lib/postgresql/data
         networks:
-            - go_api_local
+            - go_api_local_network
 
 networks:
-    go_api_local:
+    go_api_local_network:
 
 volumes:
-    go_api_mysql_data:
+    go_api_db_data:
