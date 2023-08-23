@@ -1,0 +1,33 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+# Build binary.
+cmd = "go build -o ./tmp/main.exe ./cmd/api/"
+# Read binary.
+bin = "tmp/main.exe"
+# Watch changes in those files
+include_ext = ["go", "gohmlt", "yml"]
+# Ignore changes in these files
+exclude_dir = ["tmp", "assets", "vendor", "bin", "build", "deploy"]
+# Stop builds from triggering too fast
+delay = 1000 # ms
+# Stop to run old binary when build errors occur.
+stop_on_error = true
+# This log file places in your tmp_dir.
+log = "air_errors.log"
+
+[log]
+# Show log time
+time = false
+
+[color]
+# Customize each part's color. If no color found, use the raw app log.
+main = "magenta"
+watcher = "cyan"
+build = "yellow"
+runner = "green"
+
+[misc]
+# Delete tmp directory on exit
+clean_on_exit = true

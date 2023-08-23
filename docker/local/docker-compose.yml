@@ -1,0 +1,42 @@
+version: '3.7'
+
+services:
+    app:
+        container_name: go-api-app-container
+        image: go-api/go-image
+        build:
+            args:
+                UID: "${UID:-1000}"
+            context: ../../
+            target: dev
+            dockerfile: docker/local/Dockerfile
+        restart: unless-stopped
+        depends_on:
+            - db
+        volumes:
+            - .:/src
+        ports:
+            - "4000:4000"
+        networks:
+            - go_api_local
+
+    db:
+        image: 'mysql:8.0'
+        container_name: go-api-mysql-container
+        environment:
+            MYSQL_DATABASE: "${MYSQL_DATABASE}"
+            MYSQL_USER: "${MYSQL_USER}"
+            MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+            MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+        volumes:
+            -   go_api_mysql_data:/var/lib/mysql
+        ports:
+            -   "${MYSQL_PORT}:3306"
+        networks:
+            - go_api_local
+
+networks:
+    go_api_local:
+
+volumes:
+    go_api_mysql_data:
