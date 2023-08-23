@@ -18,4 +18,7 @@ type application struct {
 	logger *log.Logger
 }
 
+// Define an envelope type for better JSON responses
+type envelope map[string]interface{}
+
 const version = "1.0.0"
