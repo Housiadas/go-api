@@ -6,6 +6,7 @@ services:
         image: go-api/go-image
         build:
             args:
+                USER: "localdev"
                 UID: "${UID:-1000}"
             context: ../../
             target: dev
