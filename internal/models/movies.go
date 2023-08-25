@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/lib/pq"
-	"go-api/internal/filters"
+	filtersPackage "go-api/internal/filters"
 	"go-api/internal/validator"
 	"time"
 )
@@ -180,10 +180,14 @@ WHERE id = $1`
 }
 
 // GetAll returns a slice of movies.
-func (m MovieModel) GetAll(title string, genres []string, filters filters.Filters) ([]*Movie, error) {
-	query := fmt.Sprintf(
-		`
-SELECT id, created_at, title, year, runtime, genres, version
+func (m MovieModel) GetAll(
+	title string,
+	genres []string,
+	filters filtersPackage.Filters,
+) ([]*Movie, filtersPackage.Metadata, error) {
+
+	query := fmt.Sprintf(`
+SELECT count(*) OVER(), id, created_at, title, year, runtime, genres, version
 FROM movies
 WHERE (to_tsvector('english', title) @@ plainto_tsquery('english', $1) OR $1 = '')
 AND (genres @> $2 OR $2 = '{}')
@@ -199,7 +203,7 @@ LIMIT $3 OFFSET $4`, filters.SortColumn(), filters.SortDirection())
 	// containing the result.
 	rows, err := m.DB.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, filtersPackage.Metadata{}, err // Update this to return an empty Metadata struct.
 	}
 
 	// Importantly, defer a call to rows.Close() to ensure that the result set is closed
@@ -211,12 +215,15 @@ LIMIT $3 OFFSET $4`, filters.SortColumn(), filters.SortDirection())
 		}
 	}(rows)
 
-	// Initialize an empty slice to hold the movie data.
+	// Initialize variables
+	totalRecords := 0
 	movies := []*Movie{}
+
 	// Use rows.Next to iterate through the rows
 	for rows.Next() {
 		var movie Movie
 		err := rows.Scan(
+			&totalRecords,
 			&movie.ID,
 			&movie.CreatedAt,
 			&movie.Title,
@@ -226,7 +233,7 @@ LIMIT $3 OFFSET $4`, filters.SortColumn(), filters.SortDirection())
 			&movie.Version,
 		)
 		if err != nil {
-			return nil, err
+			return nil, filtersPackage.Metadata{}, err
 		}
 		// Add the Movie struct to the slice.
 		movies = append(movies, &movie)
@@ -234,10 +241,14 @@ LIMIT $3 OFFSET $4`, filters.SortColumn(), filters.SortDirection())
 
 	// When the rows.Next() loop has finished, call rows.Err() to retrieve any error
 	// that was encountered during the iteration.
-	if err = rows.Err(); err != nil {
-		return nil, err
+	if err != nil {
+		return nil, filtersPackage.Metadata{}, err
 	}
-	return movies, nil
+
+	// Generate a Metadata struct, passing in the total record count and pagination
+	// parameters from the client.
+	metadata := filtersPackage.CalculateMetadata(totalRecords, filters.Page, filters.PageSize)
+	return movies, metadata, nil
 }
 
 // MarshalJSON If we need to customize attributes

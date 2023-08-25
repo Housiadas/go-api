@@ -226,15 +226,10 @@ func (app *application) listMoviesHandler(w http.ResponseWriter, r *http.Request
 	v := validator.New()
 	// Call r.URL.Query() to get the url.Values map containing the query string data.
 	qs := r.URL.Query()
-
 	// Use our helpers to extract the title and genres query string values, falling back
 	// to defaults of an empty string and an empty slice respectively if they are not provided by the client.
 	input.Title = utils.ReadString(qs, "title", "")
 	input.Genres = utils.ReadCSV(qs, "genres", []string{})
-
-	// Get the page and page_size query string values as integers. Notice that we set
-	// the default page value to 1 and default page_size to 20, and that we pass the
-	// validator instance as the final argument here.
 	input.Filters.Page = utils.ReadInt(qs, "page", 1, v)
 	input.Filters.PageSize = utils.ReadInt(qs, "page_size", 20, v)
 	input.Filters.Sort = utils.ReadString(qs, "sort", "id")
@@ -247,6 +242,7 @@ func (app *application) listMoviesHandler(w http.ResponseWriter, r *http.Request
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
+
 	// Execute the validation checks on the Filters struct and send a response
 	// containing the errors if necessary.
 	if filters.ValidateFilters(v, input.Filters); !v.Valid() {
@@ -256,14 +252,14 @@ func (app *application) listMoviesHandler(w http.ResponseWriter, r *http.Request
 
 	// Call the GetAll() method to retrieve the movies, passing in the various filter
 	// parameters.
-	movies, err := app.models.Movies.GetAll(input.Title, input.Genres, input.Filters)
+	movies, metadata, err := app.models.Movies.GetAll(input.Title, input.Genres, input.Filters)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
 	// Send a JSON response containing the movie data.
-	err = serializer.SerializeToJson(w, http.StatusOK, envelope{"movies": movies}, nil)
+	err = serializer.SerializeToJson(w, http.StatusOK, envelope{"movies": movies, "metadata": metadata}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
