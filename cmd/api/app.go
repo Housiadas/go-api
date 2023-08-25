@@ -20,6 +20,13 @@ type config struct {
 		maxIdleCons int
 		maxIdleTime string
 	}
+	// Add a new limiter struct containing fields for the requests-per-second and burst
+	// values, and a boolean field which we can use to enable/disable rate limiting
+	limiter struct {
+		rps     float64
+		burst   int
+		enabled bool
+	}
 }
 
 type application struct {
