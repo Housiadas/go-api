@@ -16,7 +16,7 @@ func (app *application) healthcheckHandler(w http.ResponseWriter, r *http.Reques
 		},
 	}
 
-	err := serializer.ToJson(w, http.StatusOK, env, nil)
+	err := serializer.SerializeToJson(w, http.StatusOK, env, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

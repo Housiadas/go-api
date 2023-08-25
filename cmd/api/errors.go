@@ -15,7 +15,7 @@ func (app *application) logError(r *http.Request, err error) {
 // this gives us more flexibility over the values that we can include in the response.
 func (app *application) errorResponse(w http.ResponseWriter, r *http.Request, status int, message interface{}) {
 	env := envelope{"error": message}
-	err := serializer.ToJson(w, status, env, nil)
+	err := serializer.SerializeToJson(w, status, env, nil)
 	if err != nil {
 		app.logError(r, err)
 		w.WriteHeader(500)

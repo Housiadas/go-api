@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	_ "github.com/lib/pq"
+	"go-api/internal/models"
 	"log"
 	"net/http"
 	"os"
@@ -51,6 +52,7 @@ func main() {
 	app := &application{
 		config: cfg,
 		logger: logger,
+		models: models.NewModels(db),
 	}
 
 	//Setup server

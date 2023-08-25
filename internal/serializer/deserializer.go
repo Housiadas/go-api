@@ -1,4 +1,4 @@
-package deserializer
+package serializer
 
 import (
 	"encoding/json"
@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func FromJson(w http.ResponseWriter, r *http.Request, dst interface{}) error {
+func DeserializeFromJson(w http.ResponseWriter, r *http.Request, dst interface{}) error {
 	maxBytes := 1_048_576 // Use http.MaxBytesReader() to limit the size of the request body to 1MB.
 	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
 	dec := json.NewDecoder(r.Body)
