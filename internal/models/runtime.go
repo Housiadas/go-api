@@ -24,10 +24,8 @@ func (r *Runtime) UnmarshalJSON(jsonValue []byte) error {
 	if err != nil {
 		return ErrInvalidRuntimeFormat
 	}
-	// Split the string to isolate the part containing the number.
+
 	parts := strings.Split(unquotedJSONValue, " ")
-	// Sanity check the parts of the string to make sure it was in the expected format.
-	// If it isn't, we return the ErrInvalidRuntimeFormat error again.
 	if len(parts) != 2 || parts[1] != "mins" {
 		return ErrInvalidRuntimeFormat
 	}

@@ -1,6 +1,9 @@
 package main
 
-import "log"
+import (
+	"go-api/internal/models"
+	"log"
+)
 
 // Define a config struct to hold all the configuration settings for our application.
 // For now, the only configuration settings will be the network port that we want the
@@ -22,6 +25,7 @@ type config struct {
 type application struct {
 	config config
 	logger *log.Logger
+	models models.Models
 }
 
 // Define an envelope type for better JSON responses
