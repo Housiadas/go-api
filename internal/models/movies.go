@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/lib/pq"
+	"go-api/internal/filters"
 	"go-api/internal/validator"
 	"time"
 )
@@ -176,6 +177,64 @@ WHERE id = $1`
 		return ErrRecordNotFound
 	}
 	return nil
+}
+
+// GetAll returns a slice of movies.
+func (m MovieModel) GetAll(title string, genres []string, filters filters.Filters) ([]*Movie, error) {
+	query := `
+SELECT id, created_at, title, year, runtime, genres, version
+FROM movies
+WHERE (to_tsvector('english', title) @@ plainto_tsquery('english', $1) OR $1 = '')
+AND (genres @> $2 OR $2 = '{}')
+ORDER BY id`
+
+	// Create a context with a 3-second timeout.
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	// Use QueryContext() to execute the query. This returns a sql.Rows result set
+	// containing the result.
+	rows, err := m.DB.QueryContext(ctx, query, title, pq.Array(genres))
+	if err != nil {
+		return nil, err
+	}
+
+	// Importantly, defer a call to rows.Close() to ensure that the result set is closed
+	// before GetAll() returns.
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+
+		}
+	}(rows)
+
+	// Initialize an empty slice to hold the movie data.
+	movies := []*Movie{}
+	// Use rows.Next to iterate through the rows
+	for rows.Next() {
+		var movie Movie
+		err := rows.Scan(
+			&movie.ID,
+			&movie.CreatedAt,
+			&movie.Title,
+			&movie.Year,
+			&movie.Runtime,
+			pq.Array(&movie.Genres),
+			&movie.Version,
+		)
+		if err != nil {
+			return nil, err
+		}
+		// Add the Movie struct to the slice.
+		movies = append(movies, &movie)
+	}
+
+	// When the rows.Next() loop has finished, call rows.Err() to retrieve any error
+	// that was encountered during the iteration.
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return movies, nil
 }
 
 // MarshalJSON If we need to customize attributes

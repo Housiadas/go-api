@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"go-api/internal/filters"
 	"go-api/internal/models"
 	"go-api/internal/serializer"
 	"go-api/internal/utils"
@@ -130,7 +131,7 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// If the request contains a X-Expected-Version header, verify that the movie
+	// If the request contains an X-Expected-Version header, verify that the movie
 	// version in the database matches the expected version specified in the header.
 	if r.Header.Get("X-Expected-Version") != "" {
 		if strconv.FormatInt(int64(movie.Version), 32) != r.Header.Get("X-Expected-Version") {
@@ -209,6 +210,60 @@ func (app *application) deleteMovieHandler(w http.ResponseWriter, r *http.Reques
 
 	// Return a 200 OK status code along with a success message.
 	err = serializer.SerializeToJson(w, http.StatusOK, envelope{"message": "movie successfully deleted"}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) listMoviesHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Title           string
+		Genres          []string
+		filters.Filters // filters struct in order to reuse it in other endpoints
+	}
+
+	// Initialize a new Validator instance.
+	v := validator.New()
+	// Call r.URL.Query() to get the url.Values map containing the query string data.
+	qs := r.URL.Query()
+
+	// Use our helpers to extract the title and genres query string values, falling back
+	// to defaults of an empty string and an empty slice respectively if they are not provided by the client.
+	input.Title = utils.ReadString(qs, "title", "")
+	input.Genres = utils.ReadCSV(qs, "genres", []string{})
+
+	// Get the page and page_size query string values as integers. Notice that we set
+	// the default page value to 1 and default page_size to 20, and that we pass the
+	// validator instance as the final argument here.
+	input.Filters.Page = utils.ReadInt(qs, "page", 1, v)
+	input.Filters.PageSize = utils.ReadInt(qs, "page_size", 20, v)
+	input.Filters.Sort = utils.ReadString(qs, "sort", "id")
+	// Add the supported sort values for this endpoint to the sort list.
+	input.Filters.SortSafelist = []string{"id", "title", "year", "runtime", "-id", "-title", "-year", "-runtime"}
+
+	// Check the Validator instance for any errors and use the failedValidationResponse()
+	// helper to send the client a response if necessary.
+	if !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+	// Execute the validation checks on the Filters struct and send a response
+	// containing the errors if necessary.
+	if filters.ValidateFilters(v, input.Filters); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	// Call the GetAll() method to retrieve the movies, passing in the various filter
+	// parameters.
+	movies, err := app.models.Movies.GetAll(input.Title, input.Genres, input.Filters)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// Send a JSON response containing the movie data.
+	err = serializer.SerializeToJson(w, http.StatusOK, envelope{"movies": movies}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
