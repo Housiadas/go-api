@@ -5,8 +5,8 @@ import (
 	"flag"
 	"fmt"
 	_ "github.com/lib/pq"
+	loggerPackage "go-api/internal/logger"
 	"go-api/internal/models"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -25,17 +25,18 @@ func main() {
 	flag.StringVar(&cfg.db.maxIdleTime, "db-max-idle-time", "15m", "PostgreSQL max connection idle time")
 	flag.Parse()
 
-	// Initialize a new logger which writes messages to the standard out stream,
-	// prefixed with the current date and time.
-	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
+	// Initialize a new logger which writes any messages *at or above* the INFO
+	// severity level to the standard out stream.
+	logger := loggerPackage.New(os.Stdout, loggerPackage.LevelInfo)
 
 	// Call the openDB() helper function (see below) to create the connection pool,
 	// passing in the config struct. If this returns an error, we log it and exit the
 	// application immediately.
 	db, err := openDB(cfg)
 	if err != nil {
-		logger.Fatal(err)
+		logger.Fatal(err, nil)
 	}
+
 	// Defer a call to db.Close() so that the connection pool is closed before the
 	// main() function exits.
 	defer func(db *sql.DB) {
@@ -44,9 +45,10 @@ func main() {
 
 		}
 	}(db)
+
 	// Also log a message to say that the connection pool has been successfully
 	// established.
-	logger.Printf("database connection pool established")
+	logger.Info("database connection pool established", nil)
 
 	// Declare an instance of the application struct, containing the config struct and
 	app := &application{
@@ -63,7 +65,12 @@ func main() {
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
-	logger.Printf("starting %s server on %s", cfg.env, srv.Addr)
+
+	logger.Info("starting server", map[string]string{
+		"addr": srv.Addr,
+		"env":  cfg.env,
+	})
+
 	err = srv.ListenAndServe()
-	logger.Fatal(err)
+	logger.Fatal(err, nil)
 }
