@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"go-api/internal/deserializer"
 	"go-api/internal/models"
 	"go-api/internal/serializer"
 	"go-api/internal/utils"
@@ -23,7 +22,7 @@ func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 
 	// If this returns an error we send the client the error message along with a 400
 	// Bad Request status code, just like before.
-	err := deserializer.FromJson(w, r, &input)
+	err := serializer.DeserializeFromJson(w, r, &input)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -46,7 +45,7 @@ func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Dump the contents of the input struct in a HTTP response.
+	// Dump the contents of the input struct in an HTTP response.
 	fmt.Fprintf(w, "%+v\n", input)
 }
 
@@ -68,7 +67,7 @@ func (app *application) showMovieHandler(w http.ResponseWriter, r *http.Request)
 		Version:   1,
 	}
 	// Encode the struct to JSON and send it as the HTTP response.
-	err = serializer.ToJson(w, http.StatusOK, envelope{"movie": movie}, nil)
+	err = serializer.SerializeToJson(w, http.StatusOK, envelope{"movie": movie}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
