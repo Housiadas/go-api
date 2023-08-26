@@ -40,7 +40,7 @@ func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 
 	// Initialize a new Validator.
 	v := validator.New()
-	models.ValidateMovie(v, movie)
+	validator.ValidateMovie(v, movie)
 	if !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
@@ -163,7 +163,7 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 	// Validate the updated movie record, sending the client a 422 Unprocessable Entity
 	// response if any checks fail.
 	v := validator.New()
-	if models.ValidateMovie(v, movie); !v.Valid() {
+	if validator.ValidateMovie(v, movie); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -245,7 +245,7 @@ func (app *application) listMoviesHandler(w http.ResponseWriter, r *http.Request
 
 	// Execute the validation checks on the Filters struct and send a response
 	// containing the errors if necessary.
-	if filters.ValidateFilters(v, input.Filters); !v.Valid() {
+	if validator.ValidateFilters(v, input.Filters); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
