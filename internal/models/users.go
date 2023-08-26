@@ -28,6 +28,8 @@ type password struct {
 	Hash      []byte
 }
 
+var AnonymousUser = &User{}
+
 var (
 	ErrDuplicateEmail = errors.New("duplicate email")
 )
@@ -200,4 +202,8 @@ func (p *password) Matches(plaintextPassword string) (bool, error) {
 		}
 	}
 	return true, nil
+}
+
+func (u *User) IsAnonymous() bool {
+	return u == AnonymousUser
 }
