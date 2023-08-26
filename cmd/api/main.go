@@ -3,13 +3,10 @@ package main
 import (
 	"database/sql"
 	"flag"
-	"fmt"
 	_ "github.com/lib/pq"
 	loggerPackage "go-api/internal/logger"
 	"go-api/internal/models"
-	"net/http"
 	"os"
-	"time"
 )
 
 func main() {
@@ -49,8 +46,7 @@ func main() {
 		}
 	}(db)
 
-	// Also log a message to say that the connection pool has been successfully
-	// established.
+	// log a message to say that the connection pool has been successfully established.
 	logger.Info("database connection pool established", nil)
 
 	// Declare an instance of the application struct, containing the config struct and
@@ -60,20 +56,9 @@ func main() {
 		models: models.NewModels(db),
 	}
 
-	//Setup server
-	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", cfg.port),
-		Handler:      app.routes(),
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 30 * time.Second,
+	// Call app.serve() to start the server.
+	err = app.serve()
+	if err != nil {
+		logger.Fatal(err, nil)
 	}
-
-	logger.Info("starting server", map[string]string{
-		"addr": srv.Addr,
-		"env":  cfg.env,
-	})
-
-	err = srv.ListenAndServe()
-	logger.Fatal(err, nil)
 }
