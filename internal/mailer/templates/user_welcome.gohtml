@@ -1,10 +1,14 @@
-{{define "subject"}}Welcome to our App{{end}}
+{{define "subject"}}Welcome to Go-api!{{end}}
 {{define "plainBody"}}
     Hi,
-    Thanks for signing up for an account. We're excited to have you on board!
-    For future reference, your user ID number is {{.ID}}.
+    Thanks for signing up for a Go-api account. We're excited to have you on board!
+    For future reference, your user ID number is {{.userID}}.
+    Please send a request to the `PUT /v1/users/activated` endpoint with the following JSON
+    body to activate your account:
+    {"token": "{{.activationToken}}"}
+    Please note that this is a one-time use token, and it will expire in 3 days.
     Thanks,
-    The Team
+    The Go-api Team
 {{end}}
 {{define "htmlBody"}}
 <!doctype html>
@@ -16,10 +20,18 @@
 </head>
 <body>
     <p>Hi,</p>
-    <p>Thanks for signing up for an account. We're excited to have you on board!</p>
-    <p>For future reference, your user ID number is {{.ID}}.</p>
+    <p>Thanks for signing up for a Go-api account. We're excited to have you on board!</p>
+    <p>For future reference, your user ID number is {{.userID}}.</p>
+    <p>Please send a request to the <code>PUT /v1/users/activated</code> endpoint with the
+    following JSON body to activate your account:</p>
+    <pre>
+        <code>
+            {"token": "{{.activationToken}}"}
+        </code>
+    </pre>
+    <p>Please note that this is a one-time use token, and it will expire in 3 days.</p>
     <p>Thanks,</p>
-    <p>The Team</p>
+    <p>The Go-api Team</p>
 </body>
 </html>
 {{end}}
