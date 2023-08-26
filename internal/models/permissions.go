@@ -45,6 +45,7 @@ WHERE users.id = $1`
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
 		if err != nil {
+			return
 		}
 	}(rows)
 
