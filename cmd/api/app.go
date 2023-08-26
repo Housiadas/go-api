@@ -5,6 +5,7 @@ import (
 	"go-api/internal/logger"
 	"go-api/internal/mailer"
 	"go-api/internal/models"
+	"sync"
 )
 
 // Define a config struct to hold all the configuration settings for our application.
@@ -42,6 +43,7 @@ type application struct {
 	logger *logger.Logger
 	models models.Models
 	mailer mailer.Mailer
+	wg     sync.WaitGroup
 }
 
 // Define an envelope type for the JSON responses
@@ -51,8 +53,14 @@ const version = "1.0.0"
 
 // Background helper callback
 func (app *application) background(fn func()) {
+	// Increment the WaitGroup counter.
+	app.wg.Add(1)
+
 	// Launch a background goroutine.
 	go func() {
+		// Use defer to decrement the WaitGroup counter before the goroutine returns.
+		defer app.wg.Done()
+
 		// Recover any panic.
 		defer func() {
 			if err := recover(); err != nil {
