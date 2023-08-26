@@ -13,12 +13,6 @@ import (
 	"time"
 )
 
-// important to realize that our middleware will only recover panics that happen in
-// the same goroutine that executed the recoverPanic() middleware.
-// If, for example, you have a handler which spins up another goroutine (e.g. to do some
-// background processing), then any panics that happen in the background goroutine will not
-// be recovered — not by the recoverPanic() middleware… and not by the panic recovery
-// built into http.Server . These panics will cause your application to exit and bring down the server.
 func (app *application) recoverPanic(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Create a deferred function (which will always be run in the event of a panic
@@ -173,4 +167,42 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		r = app.contextSetUser(r, user)
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (app *application) requireAuthenticatedUser(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Use the contextGetUser() helper that we made earlier to retrieve
+		// the user information from the request context.
+		user := app.contextGetUser(r)
+		if user.IsAnonymous() {
+			app.authenticationRequiredResponse(w, r)
+			return
+		}
+		// Call the next handler in the chain.
+		next.ServeHTTP(w, r)
+	}
+}
+
+// Note that the first parameter for the middleware function is the permission code that
+// we require the user to have.
+func (app *application) requirePermission(code string, next http.HandlerFunc) http.HandlerFunc {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		user := app.contextGetUser(r)
+		permissions, err := app.models.Permissions.GetAllForUser(user.ID)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+		// Check if the slice includes the required permission. If it doesn't, then
+		// return a 403 Forbidden response.
+		if !permissions.Include(code) {
+			app.notPermittedResponse(w, r)
+			return
+		}
+		// Otherwise they have the required permission, so we call the next handler in the chain
+		next.ServeHTTP(w, r)
+	}
+	// Wrap this with the requireAuthenticated() middleware before returning it.
+	// first we will check if authenticated
+	return app.requireAuthenticatedUser(fn)
 }
