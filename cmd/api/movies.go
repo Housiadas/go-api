@@ -13,8 +13,6 @@ import (
 )
 
 func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Request) {
-	// Declare an anonymous struct to hold the information that we expect to be in the
-	// HTTP request body. This struct will be our *target decode destination*.
 	var input struct {
 		Title   string         `json:"title"`
 		Year    int32          `json:"year"`
@@ -224,16 +222,13 @@ func (app *application) listMoviesHandler(w http.ResponseWriter, r *http.Request
 
 	// Initialize a new Validator instance.
 	v := validator.New()
-	// Call r.URL.Query() to get the url.Values map containing the query string data.
 	qs := r.URL.Query()
-	// Use our helpers to extract the title and genres query string values, falling back
-	// to defaults of an empty string and an empty slice respectively if they are not provided by the client.
+
 	input.Title = utils.ReadString(qs, "title", "")
 	input.Genres = utils.ReadCSV(qs, "genres", []string{})
 	input.Filters.Page = utils.ReadInt(qs, "page", 1, v)
 	input.Filters.PageSize = utils.ReadInt(qs, "page_size", 20, v)
 	input.Filters.Sort = utils.ReadString(qs, "sort", "id")
-	// Add the supported sort values for this endpoint to the sort list.
 	input.Filters.SortSafelist = []string{"id", "title", "year", "runtime", "-id", "-title", "-year", "-runtime"}
 
 	// Check the Validator instance for any errors and use the failedValidationResponse()
