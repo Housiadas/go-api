@@ -210,7 +210,7 @@ LIMIT $3 OFFSET $4`, filters.SortColumn(), filters.SortDirection())
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
 		if err != nil {
-
+			return
 		}
 	}(rows)
 

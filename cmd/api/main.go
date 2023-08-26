@@ -53,7 +53,7 @@ func main() {
 	defer func(db *sql.DB) {
 		err := db.Close()
 		if err != nil {
-
+			logger.Fatal(err, nil)
 		}
 	}(db)
 
