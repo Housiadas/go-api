@@ -25,4 +25,15 @@ SMTP_USERNAME=""
 SMTP_PASSWORD=""
 SMTP_SENDER=""
 ```
-### Testing
+### Generate Load (stress test)
+To add some load in our endpoints we can leverage the hey package:
+[hey](https://github.com/rakyll/hey)
+
+```
+BODY='{"email": "alice@example.com", "password": "pa55word"}'
+hey -d "$BODY" -m "POST" http://localhost:4000/v1/tokens/authentication
+```
+After that visit the below endpoint in order to see some metrics:
+```
+GET /debug/metrics
+```

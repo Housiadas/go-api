@@ -13,7 +13,7 @@ import (
 
 func (app *application) serve() error {
 	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", app.config.port),
+		Addr:         fmt.Sprintf(":%d", app.config.Port),
 		Handler:      app.routes(),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
@@ -68,7 +68,7 @@ func (app *application) serve() error {
 	// Likewise log a "starting server" message.
 	app.logger.Info("starting server", map[string]string{
 		"addr": srv.Addr,
-		"env":  app.config.env,
+		"env":  app.config.Env,
 	})
 
 	err := srv.ListenAndServe()
@@ -78,7 +78,7 @@ func (app *application) serve() error {
 
 	// Otherwise, we wait to receive the return value from Shutdown() on the
 	// shutdownError channel. If return value is an error, we know that there was a
-	// problem with the graceful shutdown and we return the error.
+	// problem with the graceful shutdown, and we return the error.
 	err = <-shutdownError
 	if err != nil {
 		return err
