@@ -2,12 +2,15 @@ package main
 
 import (
 	"errors"
+	"expvar"
 	"fmt"
+	"github.com/felixge/httpsnoop"
 	"go-api/internal/models"
 	"go-api/internal/validator"
 	"golang.org/x/time/rate"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -15,8 +18,6 @@ import (
 
 func (app *application) recoverPanic(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Create a deferred function (which will always be run in the event of a panic
-		// as Go unwinds the stack).
 		defer func() {
 			err := recover()
 			if err != nil {
@@ -32,14 +33,11 @@ func (app *application) recoverPanic(next http.Handler) http.Handler {
 }
 
 func (app *application) rateLimit(next http.Handler) http.Handler {
-	// Define a client struct to hold the rate limiter and last seen time for each
-	// client.
 	type client struct {
 		limiter  *rate.Limiter
 		lastSeen time.Time
 	}
 
-	// Declare a mutex and a map to hold the clients' IP addresses and rate limiters.
 	var (
 		mutex   sync.Mutex
 		clients = make(map[string]*client)
@@ -67,18 +65,15 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 	}()
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Only carry out the check if rate limiting is enabled.
-		if app.config.limiter.enabled {
+		if app.config.Limiter.Enabled {
 			// Extract the client's IP address from the request.
 			ip, _, err := net.SplitHostPort(r.RemoteAddr)
 			if err != nil {
 				app.serverErrorResponse(w, r, err)
 				return
 			}
-
 			// Lock the mutex to prevent this code from being executed concurrently.
 			mutex.Lock()
-
 			// Check to see if the IP address already exists in the map. If it doesn't, then
 			// initialize a new rate limiter and add the IP address and limiter to the map.
 			_, found := clients[ip]
@@ -86,24 +81,19 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 				clients[ip] = &client{
 					// Use the requests-per-second and burst values from the config
 					limiter: rate.NewLimiter(
-						rate.Limit(app.config.limiter.rps),
-						app.config.limiter.burst,
+						rate.Limit(app.config.Limiter.Rps),
+						app.config.Limiter.Burst,
 					),
 				}
 			}
 
 			// Update the last seen time for the client.
 			clients[ip].lastSeen = time.Now()
-
-			// Call limiter.Allow() to see if the request is permitted, and if it's not,
-			// then we call the rateLimitExceededResponse() helper to return a 429 Too Many
-			// Requests response (we will create this helper in a minute).
 			if !clients[ip].limiter.Allow() {
 				mutex.Unlock()
 				app.rateLimitExceededResponse(w, r)
 				return
 			}
-
 			// Very importantly, unlock the mutex before calling the next handler in the
 			// chain. Notice that we DON'T use defer to unlock the mutex, as that would mean
 			// that the mutex isn't unlocked until all the handlers downstream of this
@@ -183,8 +173,6 @@ func (app *application) requireAuthenticatedUser(next http.HandlerFunc) http.Han
 	}
 }
 
-// Note that the first parameter for the middleware function is the permission code that
-// we require the user to have.
 func (app *application) requirePermission(code string, next http.HandlerFunc) http.HandlerFunc {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		user := app.contextGetUser(r)
@@ -199,7 +187,6 @@ func (app *application) requirePermission(code string, next http.HandlerFunc) ht
 			app.notPermittedResponse(w, r)
 			return
 		}
-		// Otherwise they have the required permission, so we call the next handler in the chain
 		next.ServeHTTP(w, r)
 	}
 	// Wrap this with the requireAuthenticated() middleware before returning it.
@@ -212,9 +199,9 @@ func (app *application) enableCORS(next http.Handler) http.Handler {
 		w.Header().Add("Vary", "Origin")
 		w.Header().Add("Vary", "Access-Control-Request-Method")
 		origin := r.Header.Get("Origin")
-		if origin != "" && len(app.config.cors.trustedOrigins) != 0 {
-			for i := range app.config.cors.trustedOrigins {
-				if origin == app.config.cors.trustedOrigins[i] {
+		if origin != "" && len(app.config.Cors.TrustedOrigins) != 0 {
+			for i := range app.config.Cors.TrustedOrigins {
+				if origin == app.config.Cors.TrustedOrigins[i] {
 					w.Header().Set("Access-Control-Allow-Origin", origin)
 					// Check if the request has the HTTP method OPTIONS and contains the
 					// "Access-Control-Request-Method" header. If it does, then we treat
@@ -232,5 +219,27 @@ func (app *application) enableCORS(next http.Handler) http.Handler {
 			}
 		}
 		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) metrics(next http.Handler) http.Handler {
+	totalRequestsReceived := expvar.NewInt("total_requests_received")
+	totalResponsesSent := expvar.NewInt("total_responses_sent")
+	totalProcessingTimeMicroseconds := expvar.NewInt("total_processing_time_μs")
+	totalResponsesSentByStatus := expvar.NewMap("total_responses_sent_by_status")
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		totalRequestsReceived.Add(1)
+		// Call the httpsnoop.CaptureMetrics() function, passing in the next handler in
+		// the chain along with the existing http.ResponseWriter and http.Request. This
+		metrics := httpsnoop.CaptureMetrics(next, w, r)
+		// Increment the response sent count
+		totalResponsesSent.Add(1)
+		// Get the request processing time in microseconds from httpsnoop and increment
+		// the cumulative processing time.
+		totalProcessingTimeMicroseconds.Add(metrics.Duration.Microseconds())
+		// Use the Add() method to increment the count for the given status code by 1.
+		// Note that the expvar map is string-keyed, so we need to use the strconv.Itoa()
+		// function to convert the status code (which is an integer) to a string.
+		totalResponsesSentByStatus.Add(strconv.Itoa(metrics.Code), 1)
 	})
 }
