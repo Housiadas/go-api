@@ -2,15 +2,43 @@ package main
 
 import (
 	"fmt"
-	"go-api/internal/config"
 	"go-api/internal/logger"
 	"go-api/internal/mailer"
 	"go-api/internal/models"
 	"sync"
 )
 
+// Config Define a config struct to hold all the configuration settings for our application.
+type Config struct {
+	Port int
+	Env  string
+	DB   struct {
+		Dsn         string
+		MaxOpenCons int
+		MaxIdleCons int
+		MaxIdleTime string
+	}
+	// Add a new limiter struct containing fields for the requests-per-second and burst
+	// values, and a boolean field which we can use to enable/disable rate limiting
+	Limiter struct {
+		Rps     float64
+		Burst   int
+		Enabled bool
+	}
+	Smtp struct {
+		Host     string
+		Port     int
+		Username string
+		Password string
+		Sender   string
+	}
+	Cors struct {
+		TrustedOrigins []string
+	}
+}
+
 type application struct {
-	config config.Config
+	config Config
 	logger *logger.Logger
 	models models.Models
 	mailer mailer.Mailer
@@ -20,7 +48,10 @@ type application struct {
 // Define an envelope type for the JSON responses
 type envelope map[string]interface{}
 
-const version = "1.0.0"
+var (
+	buildTime string
+	version   string
+)
 
 // Background helper callback
 func (app *application) background(fn func()) {
