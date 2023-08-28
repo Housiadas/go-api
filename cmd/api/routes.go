@@ -3,6 +3,7 @@ package main
 import (
 	"expvar"
 	"github.com/julienschmidt/httprouter"
+	"github.com/justinas/alice"
 	"net/http"
 )
 
@@ -13,7 +14,7 @@ func (app *application) routes() http.Handler {
 
 	// Healthcheck
 	router.HandlerFunc(http.MethodGet, "/healthcheck", app.healthcheckHandler)
-	// todo: do not expose to production
+	// Metrics todo: do not expose to production
 	router.Handler(http.MethodGet, "/debug/metrics", expvar.Handler())
 
 	// Movies
@@ -34,5 +35,6 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/password-reset", app.createPasswordResetTokenHandler)
 
 	// Use the authenticate() middleware on all requests.
-	return app.metrics(app.recoverPanic(app.enableCORS(app.rateLimit(app.authenticate(router)))))
+	standard := alice.New(app.metrics, app.recoverPanic, app.enableCORS, app.rateLimit, app.authenticate)
+	return standard.Then(router)
 }

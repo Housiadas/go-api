@@ -115,7 +115,6 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-
 		// Otherwise, we expect the value of the Authorization header to be in the format
 		// "Bearer <token>". We try to split this into its constituent parts, and if the
 		// header isn't in the expected format we return a 401 Unauthorized response
@@ -124,7 +123,6 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 			app.invalidAuthenticationTokenResponse(w, r)
 			return
 		}
-
 		// Extract the actual authentication token from the header parts.
 		token := headerParts[1]
 		v := validator.New()
@@ -132,7 +130,6 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 			app.invalidAuthenticationTokenResponse(w, r)
 			return
 		}
-
 		// Retrieve the details of the user associated with the authentication token,
 		// again calling the invalidAuthenticationTokenResponse() helper if no
 		// matching record was found. IMPORTANT: Notice that we are using
