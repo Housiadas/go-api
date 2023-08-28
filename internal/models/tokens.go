@@ -12,6 +12,7 @@ import (
 const (
 	ScopeActivation     = "activation"
 	ScopeAuthentication = "authentication"
+	ScopePasswordReset  = "password-reset"
 )
 
 type Token struct {
@@ -26,8 +27,6 @@ type TokenModel struct {
 	DB *sql.DB
 }
 
-// New method is a shortcut which creates a new Token struct and then inserts the
-// data in the tokens table.
 func (m TokenModel) New(userID int64, ttl time.Duration, scope string) (*Token, error) {
 	token, err := generateToken(userID, ttl, scope)
 	if err != nil {
