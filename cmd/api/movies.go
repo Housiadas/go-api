@@ -94,7 +94,6 @@ func (app *application) showMovieHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Request) {
-	// Extract the movie ID from the URL.
 	id, err := utils.ReadIDParam(r, "id")
 	if err != nil {
 		app.notFoundResponse(w, r)
@@ -186,7 +185,6 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (app *application) deleteMovieHandler(w http.ResponseWriter, r *http.Request) {
-	// Extract the movie ID from the URL.
 	id, err := utils.ReadIDParam(r, "id")
 	if err != nil {
 		app.notFoundResponse(w, r)
@@ -215,9 +213,9 @@ func (app *application) deleteMovieHandler(w http.ResponseWriter, r *http.Reques
 
 func (app *application) listMoviesHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Title           string
-		Genres          []string
-		filters.Filters // filters struct in order to reuse it in other endpoints
+		Title  string
+		Genres []string
+		filters.Filters
 	}
 
 	// Initialize a new Validator instance.
@@ -231,15 +229,11 @@ func (app *application) listMoviesHandler(w http.ResponseWriter, r *http.Request
 	input.Filters.Sort = utils.ReadString(qs, "sort", "id")
 	input.Filters.SortSafelist = []string{"id", "title", "year", "runtime", "-id", "-title", "-year", "-runtime"}
 
-	// Check the Validator instance for any errors and use the failedValidationResponse()
-	// helper to send the client a response if necessary.
 	if !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	// Execute the validation checks on the Filters struct and send a response
-	// containing the errors if necessary.
 	if validator.ValidateFilters(v, input.Filters); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
