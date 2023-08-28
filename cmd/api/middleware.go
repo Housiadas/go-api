@@ -147,9 +147,6 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 			}
 			return
 		}
-
-		// Call the contextSetUser() helper to add the user information to the request
-		// context.
 		r = app.contextSetUser(r, user)
 		next.ServeHTTP(w, r)
 	})
