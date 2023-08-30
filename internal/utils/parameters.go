@@ -19,8 +19,6 @@ func ReadIDParam(r *http.Request, paramName string) (int64, error) {
 	return id, nil
 }
 
-// ReadString helper returns a string value from the query string, or the provided
-// default value if no matching key could be found.
 func ReadString(qs url.Values, key string, defaultValue string) string {
 	// Extract the value for a given key from the query string. If no key exists this
 	// will return the empty string "".
@@ -32,9 +30,6 @@ func ReadString(qs url.Values, key string, defaultValue string) string {
 	return s
 }
 
-// ReadCSV helper reads a string value from the query string and then splits it
-// into a slice on the comma character. If no matching key could be found, it returns
-// the provided default value.
 func ReadCSV(qs url.Values, key string, defaultValue []string) []string {
 	// Extract the value from the query string.
 	csv := qs.Get(key)
@@ -46,10 +41,6 @@ func ReadCSV(qs url.Values, key string, defaultValue []string) []string {
 	return strings.Split(csv, ",")
 }
 
-// ReadInt helper reads a string value from the query string and converts it to an
-// integer before returning. If no matching key could be found it returns the provided
-// default value. If the value couldn't be converted to an integer, then we record an
-// error message in the provided Validator instance.
 func ReadInt(qs url.Values, key string, defaultValue int, v *validator.Validator) int {
 	// Extract the value from the query string.
 	s := qs.Get(key)
