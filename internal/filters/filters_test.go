@@ -11,15 +11,15 @@ func TestFilters_Limit(t *testing.T) {
 	}
 	sut := f.Limit()
 	if sut == f.Page {
-		t.Errorf("got %q; want %q", sut, f.Page)
+		t.Errorf("got %q; expected %q", sut, f.Page)
 	}
 }
 
 func TestFilters_Offset(t *testing.T) {
 	tests := []struct {
-		name string
-		f    Filters
-		want int
+		name     string
+		f        Filters
+		expected int
 	}{
 		{
 			name: "No offset",
@@ -27,7 +27,7 @@ func TestFilters_Offset(t *testing.T) {
 				Page:     1,
 				PageSize: 20,
 			},
-			want: 0,
+			expected: 0,
 		},
 		{
 			name: "Offset 20 rows",
@@ -35,7 +35,7 @@ func TestFilters_Offset(t *testing.T) {
 				Page:     2,
 				PageSize: 20,
 			},
-			want: 20,
+			expected: 20,
 		},
 	}
 
@@ -43,8 +43,8 @@ func TestFilters_Offset(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sut := tt.f.Offset()
-			if sut != tt.want {
-				t.Errorf("got %q; want %q", sut, tt.want)
+			if sut != tt.expected {
+				t.Errorf("got %q; expected %q", sut, tt.expected)
 			}
 		})
 	}
@@ -52,9 +52,9 @@ func TestFilters_Offset(t *testing.T) {
 
 func TestFilters_SortColumn(t *testing.T) {
 	tests := []struct {
-		name string
-		f    Filters
-		want string
+		name     string
+		f        Filters
+		expected string
 	}{
 		{
 			name: "Sort Column year ASC",
@@ -62,7 +62,7 @@ func TestFilters_SortColumn(t *testing.T) {
 				Sort:         "year",
 				SortSafelist: []string{"id", "title", "year", "runtime", "-id", "-title", "-year", "-runtime"},
 			},
-			want: "year",
+			expected: "year",
 		},
 		{
 			name: "Sort Column title DESC",
@@ -70,7 +70,7 @@ func TestFilters_SortColumn(t *testing.T) {
 				Sort:         "-title",
 				SortSafelist: []string{"id", "title", "year", "runtime", "-id", "-title", "-year", "-runtime"},
 			},
-			want: "title",
+			expected: "title",
 		},
 	}
 
@@ -78,8 +78,8 @@ func TestFilters_SortColumn(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sut := tt.f.SortColumn()
-			if sut != tt.want {
-				t.Errorf("got %q; want %q", sut, tt.want)
+			if sut != tt.expected {
+				t.Errorf("got %v expected %v", sut, tt.expected)
 			}
 		})
 	}
@@ -87,9 +87,9 @@ func TestFilters_SortColumn(t *testing.T) {
 
 func TestFilters_SortDirection(t *testing.T) {
 	tests := []struct {
-		name string
-		f    Filters
-		want string
+		name     string
+		f        Filters
+		expected string
 	}{
 		{
 			name: "Sort Column year ASC",
@@ -97,7 +97,7 @@ func TestFilters_SortDirection(t *testing.T) {
 				Sort:         "year",
 				SortSafelist: []string{"id", "title", "year", "runtime", "-id", "-title", "-year", "-runtime"},
 			},
-			want: "ASC",
+			expected: "ASC",
 		},
 		{
 			name: "Sort Column title DESC",
@@ -105,7 +105,7 @@ func TestFilters_SortDirection(t *testing.T) {
 				Sort:         "-title",
 				SortSafelist: []string{"id", "title", "year", "runtime", "-id", "-title", "-year", "-runtime"},
 			},
-			want: "DESC",
+			expected: "DESC",
 		},
 	}
 
@@ -113,8 +113,8 @@ func TestFilters_SortDirection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sut := tt.f.SortDirection()
-			if sut != tt.want {
-				t.Errorf("got %q; want %q", sut, tt.want)
+			if sut != tt.expected {
+				t.Errorf("got %v expected %v", sut, tt.expected)
 			}
 		})
 	}
