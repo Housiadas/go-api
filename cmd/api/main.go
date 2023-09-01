@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	_ "github.com/lib/pq"
+	"go-api/internal/cache"
 	"go-api/internal/config"
 	loggerPackage "go-api/internal/logger"
 	"go-api/internal/mailer"
@@ -59,11 +60,18 @@ func main() {
 	// log a message to say that the connection pool has been successfully established.
 	logger.Info("database connection pool established", nil)
 
+	//Setup Redis
+	redisClient := cache.OpenRedis(cache.RedisConfig{
+		Address:  "redis:6379",
+		Password: "secret123",
+	})
+
 	// Initialize application
 	app := &application{
 		config: cfg,
 		logger: logger,
 		models: models.NewModels(db),
+		cache:  redisClient,
 		mailer: mailer.New(
 			cfg.Smtp.Host,
 			cfg.Smtp.Port,

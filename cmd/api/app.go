@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"go-api/internal/cache"
 	"go-api/internal/config"
 	"go-api/internal/logger"
 	"go-api/internal/mailer"
@@ -13,6 +14,7 @@ type application struct {
 	config config.Config
 	logger *logger.Logger
 	models models.Models
+	cache  cache.Cache
 	mailer mailer.Mailer
 	wg     sync.WaitGroup
 }
