@@ -16,6 +16,7 @@ services:
             - .env
         depends_on:
             - db
+            - redis
         volumes:
             - ../../:/app
         ports:
@@ -38,8 +39,20 @@ services:
         networks:
             - go_api_local_network
 
+    redis:
+        image: redis:latest
+        container_name: go-api-redis-container
+        command: /bin/sh -c 'redis-server --requirepass ${REDIS_PASSWORD}'
+        volumes:
+            - go_api_redis_data:/var/lib/redis/data
+        ports:
+            - "6379:6379"
+        networks:
+            - go_api_local_network
+
 networks:
     go_api_local_network:
 
 volumes:
     go_api_db_data:
+    go_api_redis_data:
