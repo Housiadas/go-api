@@ -15,6 +15,10 @@ type Config struct {
 		MaxIdleCons int
 		MaxIdleTime string
 	}
+	Redis struct {
+		Address  string
+		Password string
+	}
 	// Add a new limiter struct containing fields for the requests-per-second and burst
 	// values, and a boolean field which we can use to enable/disable rate limiting
 	Limiter struct {
@@ -44,6 +48,9 @@ func NewConfig() Config {
 	cfg.DB.MaxOpenCons, _ = utils.GetenvInt("DB_MAX_OPEN_CONNECTIONS")
 	cfg.DB.MaxIdleCons, _ = utils.GetenvInt("DB_MAX_IDLE_CONNECTIONS")
 	cfg.DB.MaxIdleTime = os.Getenv("DB_MAX_CONNECTION_IDLE_TIME")
+	// Redis
+	cfg.Redis.Address = os.Getenv("REDIS_ADDR")
+	cfg.Redis.Password = os.Getenv("REDIS_PASSWORD")
 	// Rate Limiter
 	cfg.Limiter.Rps = 2 // requests per second
 	cfg.Limiter.Burst = 4

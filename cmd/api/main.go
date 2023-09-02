@@ -23,7 +23,7 @@ var (
 
 func main() {
 	// If the version flag value is true,
-	// then print out the version number and build time and immediately exit.
+	// then print out the version number and build time and exit.
 	displayVersion := flag.Bool("version", false, "Display version and exit")
 	flag.Parse()
 	if *displayVersion {
@@ -56,14 +56,13 @@ func main() {
 			logger.Fatal(err, nil)
 		}
 	}(db)
-
 	// log a message to say that the connection pool has been successfully established.
 	logger.Info("database connection pool established", nil)
 
 	//Setup Redis
 	redisClient := cache.OpenRedis(cache.RedisConfig{
-		Address:  "redis:6379",
-		Password: "secret123",
+		Address:  cfg.Redis.Address,
+		Password: cfg.Redis.Password,
 	})
 
 	// Initialize application
@@ -71,7 +70,6 @@ func main() {
 		config: cfg,
 		logger: logger,
 		models: models.NewModels(db),
-		cache:  redisClient,
 		mailer: mailer.New(
 			cfg.Smtp.Host,
 			cfg.Smtp.Port,
@@ -79,6 +77,7 @@ func main() {
 			cfg.Smtp.Password,
 			cfg.Smtp.Sender,
 		),
+		cache: redisClient,
 	}
 
 	// Publish a new "version" variable in the expvar handler containing our application

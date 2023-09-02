@@ -14,8 +14,8 @@ type application struct {
 	config config.Config
 	logger *logger.Logger
 	models models.Models
-	cache  cache.Cache
 	mailer mailer.Mailer
+	cache  cache.Cache
 	wg     sync.WaitGroup
 }
 
