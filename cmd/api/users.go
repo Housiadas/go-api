@@ -2,10 +2,15 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"go-api/internal/models"
 	"go-api/internal/serializer"
 	"go-api/internal/validator"
+	"io"
+	"mime/multipart"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -212,6 +217,108 @@ func (app *application) updateUserPasswordHandler(w http.ResponseWriter, r *http
 	// Send the user a confirmation message.
 	env := envelope{"message": "your password was successfully reset"}
 	err = serializer.SerializeToJson(w, http.StatusOK, env, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) uploadUserDocumentsHandler(w http.ResponseWriter, r *http.Request) {
+	const MaxUploadSize = 1024 * 1024 * 32 // 32MB
+	const MaxUploadFileSize = 1024 * 1024  // 1MB
+
+	var input struct {
+		Files []*multipart.FileHeader `json:"files"`
+	}
+
+	// check if user authenticated
+	//user := app.contextGetUser(r)
+	//if user.IsAnonymous() {
+	//	app.authenticationRequiredResponse(w, r)
+	//	return
+	//}
+
+	// 32 MB is the default used by FormFile()
+	if err := r.ParseMultipartForm(MaxUploadSize); err != nil {
+		app.badRequestResponse(w, r, fmt.Errorf("the uploaded files are too big. Please use files less than %dMB in size", MaxUploadSize))
+		return
+	}
+
+	// Get a reference to the fileHeaders.
+	// They are accessible only after ParseMultipartForm is called
+	input.Files = r.MultipartForm.File["file"]
+
+	for _, fileHeader := range input.Files {
+		// Restrict the size of each uploaded file to 1MB.
+		// To prevent the aggregate size from exceeding
+		// a specified value, use the http.MaxBytesReader() method
+		// before calling ParseMultipartForm()
+		if fileHeader.Size > MaxUploadFileSize {
+			app.badRequestResponse(w, r, fmt.Errorf("the uploaded file is too big. Please use file less than %dMB in size", MaxUploadFileSize))
+			return
+		}
+
+		// Open the file
+		file, err := fileHeader.Open()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		defer func(file multipart.File) {
+			err := file.Close()
+			if err != nil {
+				app.logger.Fatal(err, nil)
+			}
+		}(file)
+
+		buff := make([]byte, 512)
+		_, err = file.Read(buff)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		filetype := http.DetectContentType(buff)
+		if filetype != "image/jpeg" && filetype != "image/png" {
+			app.badRequestResponse(w, r, fmt.Errorf("the provided file format is not allowed. Please upload a JPEG or PNG image"))
+			return
+		}
+
+		_, err = file.Seek(0, io.SeekStart)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		err = os.MkdirAll("./storage", os.ModePerm)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		f, err := os.Create(fmt.Sprintf("./storage/%d%s", time.Now().UnixNano(), filepath.Ext(fileHeader.Filename)))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		defer func(f *os.File) {
+			err := f.Close()
+			if err != nil {
+				app.logger.Fatal(err, nil)
+			}
+		}(f)
+
+		_, err = io.Copy(f, file)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
+	// Send the user a confirmation message.
+	env := envelope{"message": "Documents uploaded successfully"}
+	err := serializer.SerializeToJson(w, http.StatusOK, env, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

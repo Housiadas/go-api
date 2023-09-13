@@ -63,6 +63,5 @@ func NewConfig() Config {
 	cfg.Smtp.Sender = os.Getenv("SMTP_SENDER")
 	// CORS
 	cfg.Cors.TrustedOrigins = strings.Split(os.Getenv("CORS_TRUSTED_ORIGINS"), ",")
-
 	return cfg
 }
